@@ -6,9 +6,9 @@ import os
 import pytest
 import time
 
-APPLICATION_STACK_NAME = os.getenv('ENV_STACK_NAME', None)
+APPLICATION_STACK_NAME = os.getenv('ENV_STACK_NAME', 'ws-serverless-patterns-dev')
 globalConfig = {}
-
+boto3.setup_default_session(region_name="us-west-2")
 
 def get_stack_outputs(stack_name):
     result = {}
