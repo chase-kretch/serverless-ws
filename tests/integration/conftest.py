@@ -33,20 +33,20 @@ def create_cognito_accounts():
                                      Username=result["regularUserName"])
     except idp_client.exceptions.UserNotFoundException:
         print('Regular user haven''t been created previously')
-   idp_response = idp_client.admin_create_user(
-       UserPoolId=globalConfig["UserPool"],
-       Username=result["regularUserName"],
-       TemporaryPassword=result["regularUserPassword"],
-       MessageAction='SUPPRESS',
-       UserAttributes=[{"Name": "name", "Value": result["regularUserName"]}]
-   )
-   result["regularUserSub"] = idp_response["User"]["Username"]
-   idp_client.admin_set_user_password(
-       UserPoolId=globalConfig["UserPool"],
-       Username=result["regularUserName"],
-       Password=result["regularUserPassword"],
-       Permanent=True
-   )
+    idp_response = idp_client.admin_create_user(
+        UserPoolId=globalConfig["UserPool"],
+        Username=result["regularUserName"],
+        TemporaryPassword=result["regularUserPassword"],
+        MessageAction='SUPPRESS',
+        UserAttributes=[{"Name": "name", "Value": result["regularUserName"]}]
+    )
+    result["regularUserSub"] = idp_response["User"]["Username"]
+    idp_client.admin_set_user_password(
+        UserPoolId=globalConfig["UserPool"],
+        Username=result["regularUserName"],
+        Password=result["regularUserPassword"],
+        Permanent=True
+    )
     result["regularUserSub"] = idp_response["UserSub"]
     idp_client.admin_confirm_sign_up(UserPoolId=globalConfig["UserPool"],
                                      Username=result["regularUserName"])
