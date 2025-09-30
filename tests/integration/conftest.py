@@ -1,24 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: MIT-0
-
-import boto3
-import os
-import pytest
-import time
-
-APPLICATION_STACK_NAME = os.getenv('ENV_STACK_NAME', 'ws-serverless-patterns-dev')
-globalConfig = {}
-boto3.setup_default_session(region_name="us-west-2")
-
-def get_stack_outputs(stack_name):
-    result = {}
-    cf_client = boto3.client('cloudformation')
-    cf_response = cf_client.describe_stacks(StackName=stack_name)
-    outputs = cf_response["Stacks"][0]["Outputs"]
-    for output in outputs:
-        result[output["OutputKey"]] = output["OutputValue"]
-    return result
-
 def create_cognito_accounts():
     result = {}
     sm_client = boto3.client('secretsmanager')
@@ -47,9 +26,6 @@ def create_cognito_accounts():
         Password=result["regularUserPassword"],
         Permanent=True
     )
-    result["regularUserSub"] = idp_response["UserSub"]
-    idp_client.admin_confirm_sign_up(UserPoolId=globalConfig["UserPool"],
-                                     Username=result["regularUserName"])
     # get new user authentication info
     idp_response = idp_client.initiate_auth(
         AuthFlow='USER_PASSWORD_AUTH',
@@ -71,7 +47,7 @@ def create_cognito_accounts():
         idp_client.admin_delete_user(UserPoolId=globalConfig["UserPool"],
                                      Username=result["adminUserName"])
     except idp_client.exceptions.UserNotFoundException:
-        print('Regular user haven''t been created previously')
+        print('Admin user haven''t been created previously')
     idp_response = idp_client.admin_create_user(
         UserPoolId=globalConfig["UserPool"],
         Username=result["adminUserName"],
@@ -103,26 +79,3 @@ def create_cognito_accounts():
     result["adminUserAccessToken"] = idp_response["AuthenticationResult"]["AccessToken"]
     result["adminUserRefreshToken"] = idp_response["AuthenticationResult"]["RefreshToken"]
     return result
-
-def clear_dynamo_tables():
-    # clear all data from the tables that will be used for testing
-    dbd_client = boto3.client('dynamodb')
-    db_response = dbd_client.scan(
-        TableName=globalConfig['UsersTable'],
-        AttributesToGet=['userid']
-    )
-    for item in db_response["Items"]:
-        dbd_client.delete_item(
-            TableName=globalConfig['UsersTable'],
-            Key={'userid': {'S': item['userid']["S"]}}
-        )
-    return
-
-@pytest.fixture(scope='session')
-def global_config(request):
-    global globalConfig
-    # load outputs of the stacks to test
-    globalConfig.update(get_stack_outputs(APPLICATION_STACK_NAME))
-    globalConfig.update(create_cognito_accounts())
-    clear_dynamo_tables()
-    return globalConfig
